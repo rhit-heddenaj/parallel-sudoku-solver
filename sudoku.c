@@ -5,6 +5,44 @@
 
 #define SIZE 9
 
+char *letters = "-ABCDEFGHIJ"; // Mapping letters to numbers
+
+// Define the structure for the key-value pairs
+typedef struct {
+    const int num;
+    char letter;
+} DictEntry;
+
+// Define the static dictionary (file-scoped and persistent)
+static const DictEntry num_to_letter[] = {
+    {1, 'A'},
+    {2, 'B'},
+    {3, 'C'},
+    {4, 'D'},
+    {5, 'E'},
+    {6, 'F'},
+    {7, 'G'},
+    {8, 'H'},
+    {9, 'I'}
+};
+
+int get_number_from_letter(const char *search_key) {
+    char *pos = strchr(letters, search_key[0]);
+    if (pos) {
+        return pos - letters;
+    }
+    return -1; // Key not found indicator
+}
+
+char get_char_from_number(const int search_key) {
+    for (size_t i = 0; i < sizeof(num_to_letter) / sizeof(num_to_letter[0]); i++) {
+        if (num_to_letter[i].num == search_key) {
+            return num_to_letter[i].letter;
+        }
+    }
+    return '-'; // Return '-' if not found
+}
+
 void print_board(int board[SIZE][SIZE]) {
     for (int i = 0; i < SIZE; i++) {
         if (i % 3 == 0) {
@@ -14,7 +52,7 @@ void print_board(int board[SIZE][SIZE]) {
             if (j % 3 == 0) {
                 printf("| ");
             }
-            printf("%d ", board[i][j]);
+            printf("%c ", get_char_from_number(board[i][j]));
         }
         printf("|\n");
     }
@@ -73,7 +111,7 @@ int solve(int board[SIZE][SIZE]) {
 
 void parse_board(const char *input, int board[SIZE][SIZE]) {
     for (int i = 0; i < SIZE * SIZE; i++) {
-        board[i / SIZE][i % SIZE] = input[i] - '0';
+        board[i / SIZE][i % SIZE] = get_number_from_letter(&input[i]);
     }
 }
 
