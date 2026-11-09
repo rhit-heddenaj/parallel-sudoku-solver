@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <omp.h>
 
-#define SIZE 9
+#define SIZE 25
+#define BOX 5
 
-char *letters = "-ABCDEFGHIJ"; // Mapping letters to numbers
+char *letters = "-ABCDEFGHIJKLMNOPQRSTUVWXY"; // Mapping letters to numbers
 
 // Define the structure for the key-value pairs
 typedef struct {
@@ -23,7 +25,23 @@ static const DictEntry num_to_letter[] = {
     {6, 'F'},
     {7, 'G'},
     {8, 'H'},
-    {9, 'I'}
+    {9, 'I'},
+    {10, 'J'},
+    {11, 'K'},
+    {12, 'L'},
+    {13, 'M'},
+    {14, 'N'},
+    {15, 'O'},
+    {16, 'P'},
+    {17, 'Q'},
+    {18, 'R'},
+    {19, 'S'},
+    {20, 'T'},
+    {21, 'U'},
+    {22, 'V'},
+    {23, 'W'},
+    {24, 'X'},
+    {25, 'Y'}
 };
 
 int get_number_from_letter(const char *search_key) {
@@ -45,11 +63,11 @@ char get_char_from_number(const int search_key) {
 
 void print_board(int board[SIZE][SIZE]) {
     for (int i = 0; i < SIZE; i++) {
-        if (i % 3 == 0) {
+        if (i % BOX == 0) {
             printf("+-------+-------+-------+\n");
         }
         for (int j = 0; j < SIZE; j++) {
-            if (j % 3 == 0) {
+            if (j % BOX == 0) {
                 printf("| ");
             }
             printf("%c ", get_char_from_number(board[i][j]));
@@ -77,10 +95,10 @@ int is_valid(int board[SIZE][SIZE], int num, int row, int col) {
         }
     }
 
-    int box_row_start = (row / 3) * 3;
-    int box_col_start = (col / 3) * 3;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+    int box_row_start = (row / BOX) * BOX;
+    int box_col_start = (col / BOX) * BOX;
+    for (int i = 0; i < BOX; i++) {
+        for (int j = 0; j < BOX; j++) {
             if (board[box_row_start + i][box_col_start + j] == num) {
                 return 0;
             }
@@ -123,7 +141,7 @@ int main(int argc, char *argv[]) {
 
     const char *input = argv[1] + 8;
     if (strlen(input) != SIZE * SIZE) {
-        printf("The board must be exactly 81 characters long.\n");
+        printf("The board must be exactly %d characters long.\n", SIZE * SIZE);
         return 1;
     }
 
@@ -134,9 +152,11 @@ int main(int argc, char *argv[]) {
     print_board(board);
 
     clock_t start_time = clock();
+    // double t0 = omp_get_wtime(); // Start time for OpenMP timing
 
     if (solve(board)) {
         clock_t end_time = clock();
+        // double ms = (omp_get_wtime() - t0) * 1000;
         double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC * 1000; // Convert to milliseconds
         printf("\nSolved Sudoku puzzle:\n");
         print_board(board);
