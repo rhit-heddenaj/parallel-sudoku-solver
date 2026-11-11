@@ -113,6 +113,7 @@ int solve(int board[SIZE][SIZE]) {
         return 1;
     }
 
+    #pragma omp parallel for
     for (int num = 1; num <= SIZE; num++) {
         if (is_valid(board, num, row, col)) {
             board[row][col] = num;
@@ -127,10 +128,33 @@ int solve(int board[SIZE][SIZE]) {
     return 0;
 }
 
-void parse_board(const char *input, int board[SIZE][SIZE]) {
+int parse_board(const char *input, int board[SIZE][SIZE]) {
     for (int i = 0; i < SIZE * SIZE; i++) {
-        board[i / SIZE][i % SIZE] = get_number_from_letter(&input[i]);
+        int num = get_number_from_letter(&input[i]);
+        if (num == -1) {
+            return 0;
+        }
+        board[i / SIZE][i % SIZE] = num;
     }
+    return 1;
+}
+
+// idk whether or not we will want to parallelize this, but I got tired of constantly inputting faulty boards and waiting indefinitely
+int is_initial_board_valid(int board[SIZE][SIZE]) {
+    for (int r = 0; r < SIZE; r++) {
+        for (int c = 0; c < SIZE; c++) {
+            int val = board[r][c];
+            if (val != 0) {
+                board[r][c] = 0;
+                if (!is_valid(board, val, r, c)) {
+                    board[r][c] = val;
+                    return 0;
+                }
+                board[r][c] = val;
+            }
+        }
+    }
+    return 1;
 }
 
 int main(int argc, char *argv[]) {
@@ -146,21 +170,30 @@ int main(int argc, char *argv[]) {
     }
 
     int board[SIZE][SIZE];
-    parse_board(input, board);
+    if (!parse_board(input, board)) {
+        printf("bad board format\n");
+        return 1;
+    }
 
     printf("Sudoku puzzle:\n");
     print_board(board);
 
-    clock_t start_time = clock();
-    // double t0 = omp_get_wtime(); // Start time for OpenMP timing
+
+    if(!is_initial_board_valid(board)) {
+        printf("bad board input\n");
+        return 1;
+    }
+
+    // clock_t start_time = clock();
+    double t0 = omp_get_wtime();
 
     if (solve(board)) {
-        clock_t end_time = clock();
-        // double ms = (omp_get_wtime() - t0) * 1000;
-        double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC * 1000; // Convert to milliseconds
+        // clock_t end_time = clock();
+        double ms = (omp_get_wtime() - t0) * 1000.0;
+        // double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC * 1000; // Convert to milliseconds
         printf("\nSolved Sudoku puzzle:\n");
         print_board(board);
-        printf("\nExecution time: %.3f ms\n", time_spent);
+        printf("\nExecution time: %.3f ms\n", ms);
     } else {
         printf("No solution exists\n");
     }
