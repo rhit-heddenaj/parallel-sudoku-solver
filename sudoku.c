@@ -7,7 +7,7 @@
 #define SIZE 25
 #define BOX 5
 
-#define PRINT_BOARD 0
+#define PRINT_BOARD 1
 
 char *letters = "-ABCDEFGHIJKLMNOPQRSTUVWXY"; // Mapping letters to numbers
 

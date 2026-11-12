@@ -6,7 +6,8 @@
 
 #define SIZE 25
 #define BOX 5
-#define CUTOFF 6
+// #define CUTOFF 6
+static int cutoff = 6;
 #define PRINT_BOARD 0
 
 char *letters = "-ABCDEFGHIJKLMNOPQRSTUVWXY"; // Mapping letters to numbers
@@ -147,7 +148,7 @@ static void solve_par(int board[SIZE][SIZE], int depth) {
     stop = found;
     if (stop) return;
 
-    if (depth >= CUTOFF) {
+    if (depth >= cutoff) {
         if (solve_serial(board)) {
             #pragma omp critical
             {
@@ -229,9 +230,17 @@ int is_initial_board_valid(int board[SIZE][SIZE]) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2 || strncmp(argv[1], "--board=", 8) != 0) {
+    if (argc < 2 || strncmp(argv[1], "--board=", 8) != 0) {
         printf("Usage: %s --board=530070000...\n", argv[0]);
         return 1;
+    }
+
+    if (argc == 3 && strncmp(argv[2], "--cutoff=", 9) == 0) {
+        cutoff = atoi(argv[2] + 9);
+        if (cutoff <= 0) {
+            printf("Cutoff must be a positive integer.\n");
+            return 1;
+        }
     }
 
     const char *input = argv[1] + 8;
