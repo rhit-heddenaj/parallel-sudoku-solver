@@ -6,6 +6,8 @@
 
 #define SIZE 25
 #define BOX 5
+#define CUTOFF 6
+#define PRINT_BOARD 0
 
 char *letters = "-ABCDEFGHIJKLMNOPQRSTUVWXY"; // Mapping letters to numbers
 
@@ -62,6 +64,9 @@ char get_char_from_number(const int search_key) {
 }
 
 void print_board(int board[SIZE][SIZE]) {
+    if(!PRINT_BOARD) {
+        return;
+    }
     for (int i = 0; i < SIZE; i++) {
         if (i % BOX == 0) {
             printf("+-------+-------+-------+\n");
@@ -107,8 +112,17 @@ int is_valid(int board[SIZE][SIZE], int num, int row, int col) {
     return 1;
 }
 
-int solve(int board[SIZE][SIZE]) {
+static int found = 0; //have found solution?
+static int solution[SIZE][SIZE];
+
+int solve_serial(int board[SIZE][SIZE]) {
     int row, col;
+    int stop;
+    #pragma omp atomic read
+    stop = found;
+    if(stop) {
+        return 0;
+    }
     if (!find_empty(board, &row, &col)) {
         return 1;
     }
@@ -117,12 +131,70 @@ int solve(int board[SIZE][SIZE]) {
         if (is_valid(board, num, row, col)) {
             board[row][col] = num;
 
-            if (solve(board)) {
+            if (solve_serial(board)) {
                 return 1;
             }
 
             board[row][col] = 0;
         }
+    }
+    return 0;
+}
+
+static void solve_par(int board[SIZE][SIZE], int depth) {
+    int stop;
+    #pragma omp atomic read
+    stop = found;
+    if (stop) return;
+
+    if (depth >= CUTOFF) {
+        if (solve_serial(board)) {
+            #pragma omp critical
+            {
+                if (!found) {
+                    memcpy(solution, board, sizeof(solution));
+                    #pragma omp atomic write
+                    found = 1;
+                }
+            }
+        }
+        return;
+    }
+
+    int row, col;
+    if (!find_empty(board, &row, &col)) {
+        #pragma omp critical
+        {
+            if (!found) {
+                memcpy(solution, board, sizeof(solution));
+                #pragma omp atomic write
+                found = 1;
+            }
+        }
+        return;
+    }
+
+    for (int num = 1; num <= SIZE; num++) {
+        if (is_valid(board, num, row, col)) {
+            int copy[SIZE][SIZE];
+            memcpy(copy, board, sizeof(copy));
+            copy[row][col] = num;
+            #pragma omp task firstprivate(copy, depth)
+            solve_par(copy, depth + 1);
+        }
+    }
+    #pragma omp taskwait
+}
+
+int solve_parallel(int board[SIZE][SIZE]) {
+    found = 0;
+    #pragma omp parallel
+    #pragma omp single
+    solve_par(board, 0);
+
+    if (found) {
+        memcpy(board, solution, sizeof(solution));
+        return 1;
     }
     return 0;
 }
@@ -185,15 +257,14 @@ int main(int argc, char *argv[]) {
 
     // clock_t start_time = clock();
     double t0 = omp_get_wtime();
-    double ms = 0.0;
-
-    if (solve(board)) {
+    double solved = solve_parallel(board);
+    double ms = (omp_get_wtime() - t0) * 1000.0;
+    if (solved) {
         // clock_t end_time = clock();
-        ms = (omp_get_wtime() - t0) * 1000.0;
         // double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC * 1000; // Convert to milliseconds
         printf("\nSolved Sudoku puzzle:\n");
         print_board(board);
-        printf("\nExecution time: %.3f ms\n", ms);
+        printf("\nParallel execution time with %d threads: %.3f ms\n", omp_get_max_threads(), ms);
     } else {
         printf("No solution exists\n");
     }

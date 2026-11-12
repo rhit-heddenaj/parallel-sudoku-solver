@@ -7,6 +7,8 @@
 #define SIZE 25
 #define BOX 5
 
+#define PRINT_BOARD 0
+
 char *letters = "-ABCDEFGHIJKLMNOPQRSTUVWXY"; // Mapping letters to numbers
 
 // Define the structure for the key-value pairs
@@ -62,6 +64,9 @@ char get_char_from_number(const int search_key) {
 }
 
 void print_board(int board[SIZE][SIZE]) {
+    if(!PRINT_BOARD) {
+        return;
+    }
     for (int i = 0; i < SIZE; i++) {
         if (i % BOX == 0) {
             printf("+-------+-------+-------+\n");
@@ -113,7 +118,6 @@ int solve(int board[SIZE][SIZE]) {
         return 1;
     }
 
-    #pragma omp parallel for
     for (int num = 1; num <= SIZE; num++) {
         if (is_valid(board, num, row, col)) {
             board[row][col] = num;
@@ -193,7 +197,7 @@ int main(int argc, char *argv[]) {
         // double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC * 1000; // Convert to milliseconds
         printf("\nSolved Sudoku puzzle:\n");
         print_board(board);
-        printf("\nExecution time: %.3f ms\n", ms);
+        printf("\nSerial execution time: %.3f ms\n", ms);
     } else {
         printf("No solution exists\n");
     }
