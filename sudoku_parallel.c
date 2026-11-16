@@ -8,7 +8,7 @@
 #define BOX 5
 // #define CUTOFF 6
 static int cutoff = 6;
-#define PRINT_BOARD 0
+#define PRINT_BOARD 1
 
 char *letters = "-ABCDEFGHIJKLMNOPQRSTUVWXY"; // Mapping letters to numbers
 
