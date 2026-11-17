@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# Disclaimer: AI was used to assist in the creation of this file.
+
 import argparse
 import math
 import os
