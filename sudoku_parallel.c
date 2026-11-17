@@ -83,6 +83,7 @@ void print_board(int board[SIZE][SIZE]) {
     printf("+-------+-------+-------+\n");
 }
 
+// Find an empty cell in the board. If found, set row and col to its coordinates and return 1. Otherwise, return 0.
 int find_empty(int board[SIZE][SIZE], int *row, int *col) {
     for (*row = 0; *row < SIZE; (*row)++) {
         for (*col = 0; *col < SIZE; (*col)++) {
@@ -94,6 +95,8 @@ int find_empty(int board[SIZE][SIZE], int *row, int *col) {
     return 0;
 }
 
+
+// Check if placing num at board[row][col] is valid according to Sudoku rules.
 int is_valid(int board[SIZE][SIZE], int num, int row, int col) {
     for (int i = 0; i < SIZE; i++) {
         if (board[row][i] == num || board[i][col] == num) {
@@ -116,6 +119,8 @@ int is_valid(int board[SIZE][SIZE], int num, int row, int col) {
 static int found = 0; //have found solution?
 static int solution[SIZE][SIZE];
 
+
+// Same serial solve as sudoku.c
 int solve_serial(int board[SIZE][SIZE]) {
     int row, col;
     int stop;
@@ -142,6 +147,7 @@ int solve_serial(int board[SIZE][SIZE]) {
     return 0;
 }
 
+// Parallelized version of the solve function at a particular depth. If the depth exceeds the cutoff, it switches to the serial version.
 static void solve_par(int board[SIZE][SIZE], int depth) {
     int stop;
     #pragma omp atomic read
@@ -187,6 +193,7 @@ static void solve_par(int board[SIZE][SIZE], int depth) {
     #pragma omp taskwait
 }
 
+// This function initializes the parallel solving process and checks if a solution was found
 int solve_parallel(int board[SIZE][SIZE]) {
     found = 0;
     #pragma omp parallel
